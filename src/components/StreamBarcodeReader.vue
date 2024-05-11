@@ -1,5 +1,6 @@
 <template>
   <div class="scanner-container">
+    {{ deviceID }}: device id nimi
     <div v-show="!isLoading">
       <video poster="data:image/gif,AAAA" ref="scanner"></video>
       <div class="overlay-element"></div>
@@ -8,40 +9,52 @@
   </div>
 </template>
 
-<script>
-import { BrowserMultiFormatReader, Exception } from "@zxing/library";
+<script >
+import { BrowserMultiFormatReader, Exception, DecodeHintType, BarcodeFormat } from "@zxing/library";
 
 export default {
   name: "stream-barcode-reader",
+  // props:['deviceID'],
 
-  data() {
-    return {
-      isLoading: true,
-      codeReader: new BrowserMultiFormatReader(),
-      isMediaStreamAPISupported: navigator && navigator.mediaDevices && "enumerateDevices" in navigator.mediaDevices,
-    };
-  },
-
-  mounted() {
-    if (!this.isMediaStreamAPISupported) {
-      throw new Exception("Media Stream API is not supported");
-      return;
-    }
-
-    this.start();
-    this.$refs.scanner.oncanplay = (event) => {
-      this.isLoading = false;
-      this.$emit("loaded");
-    };
-  },
-
-  beforeUnmount() {
-    this.codeReader.reset();
-  },
-
-  methods: {
-    start() {
-      this.codeReader.decodeFromVideoDevice(undefined, this.$refs.scanner, (result, err) => {
+  
+  props: {
+    deviceID: {
+      type: String,
+      default: undefined,
+    },},
+    data() {
+      return {
+        hints:new Map(),
+        codeReader:null,
+        isLoading: true,
+        isMediaStreamAPISupported: navigator && navigator.mediaDevices && "enumerateDevices" in navigator.mediaDevices,
+      };
+    },
+    
+    mounted() {
+      
+      const formats = [BarcodeFormat.CODE_39]
+      this.hints.set(DecodeHintType.POSSIBLE_FORMATS, formats)
+      this.codeReader= new BrowserMultiFormatReader(this.hints)
+      
+      if (!this.isMediaStreamAPISupported) {
+        throw new Exception("Media Stream API is not supported");
+        return;
+      }
+      this.start();
+      this.$refs.scanner.oncanplay = (event) => {
+        this.isLoading = false;
+        this.$emit("loaded");
+      };
+    },
+    
+    beforeUnmount() {
+      this.codeReader.reset();
+    },
+    
+    methods: {
+      start() {
+      this.codeReader.decodeFromVideoDevice(this.deviceID, this.$refs.scanner, (result, err) => {
         if (result) {
           this.$emit("decode", result.text);
           this.$emit("result", result);
