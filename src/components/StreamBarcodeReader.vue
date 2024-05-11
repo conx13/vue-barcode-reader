@@ -1,6 +1,5 @@
 <template>
   <div class="scanner-container">
-    {{ deviceID }}: device id nimi
     <div v-show="!isLoading">
       <video poster="data:image/gif,AAAA" ref="scanner"></video>
       <div class="overlay-element"></div>
@@ -43,8 +42,8 @@ export default {
       }
       this.start();
       this.$refs.scanner.oncanplay = (event) => {
-        this.isLoading = false;
         this.$emit("loaded");
+        this.isLoading = false;
       };
     },
     
